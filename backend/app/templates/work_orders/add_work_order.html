@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Create Work Order{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-plus-circle me-2"></i>Create New Work Order
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('work_orders.add_work_order') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.asset_id.label(class="form-label") }}
+                            {% if form.asset_id.errors %}
+                                {{ form.asset_id(class="form-select is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.asset_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.asset_id(class="form-select") }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            {{ form.type.label(class="form-label") }}
+                            {% if form.type.errors %}
+                                {{ form.type(class="form-select is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.type.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.type(class="form-select") }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.priority.label(class="form-label") }}
+                            {% if form.priority.errors %}
+                                {{ form.priority(class="form-select is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.priority.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.priority(class="form-select") }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            {{ form.due_date.label(class="form-label") }}
+                            {% if form.due_date.errors %}
+                                {{ form.due_date(class="form-control is-invalid", type="date") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.due_date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.due_date(class="form-control", type="date") }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {% if form.description.errors %}
+                            {{ form.description(class="form-control is-invalid", rows=4) }}
+                            <div class="invalid-feedback">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.description(class="form-control", rows=4, 
+                                              placeholder="Describe the work to be performed...") }}
+                        {% endif %}
+                    </div>
+
+                    {% if current_user.role == 'Planner' %}
+                    <div class="mb-4">
+                        {{ form.assigned_technician_id.label(class="form-label") }}
+                        {% if form.assigned_technician_id.errors %}
+                            {{ form.assigned_technician_id(class="form-select is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.assigned_technician_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.assigned_technician_id(class="form-select") }}
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            Select a technician to assign this work order to
+                        </small>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('work_orders.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Work Orders
+                        </a>
+                        {{ form.submit(class="btn btn-success") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-set due date based on priority
+    const prioritySelect = document.querySelector('select[name="priority"]');
+    const dueDateInput = document.querySelector('input[name="due_date"]');
+    
+    prioritySelect.addEventListener('change', function() {
+        const today = new Date();
+        let dueDate = new Date();
+        
+        switch(this.value) {
+            case 'High':
+                dueDate.setDate(today.getDate() + 1); // Due tomorrow
+                break;
+            case 'Medium':
+                dueDate.setDate(today.getDate() + 7); // Due in a week
+                break;
+            case 'Low':
+                dueDate.setDate(today.getDate() + 14); // Due in two weeks
+                break;
+        }
+        
+        // Format date as YYYY-MM-DD
+        const formattedDate = dueDate.toISOString().split('T')[0];
+        dueDateInput.value = formattedDate;
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}
