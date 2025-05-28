@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Work Orders{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-tasks me-2"></i>Work Orders</h2>
+    <div>
+        <a href="{{ url_for('work_orders.add_work_order') }}" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i>New Work Order
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Statuses</option>
+                    <option value="Open" {% if status_filter == 'Open' %}selected{% endif %}>Open</option>
+                    <option value="In Progress" {% if status_filter == 'In Progress' %}selected{% endif %}>In Progress</option>
+                    <option value="On Hold" {% if status_filter == 'On Hold' %}selected{% endif %}>On Hold</option>
+                    <option value="Completed" {% if status_filter == 'Completed' %}selected{% endif %}>Completed</option>
+                    <option value="Cancelled" {% if status_filter == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="type" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Types</option>
+                    <option value="Preventive" {% if type_filter == 'Preventive' %}selected{% endif %}>Preventive</option>
+                    <option value="Corrective" {% if type_filter == 'Corrective' %}selected{% endif %}>Corrective</option>
+                    <option value="Emergency" {% if type_filter == 'Emergency' %}selected{% endif %}>Emergency</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Search work orders..."
+                           value="{{ request.args.get('search', '') }}">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>Search
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Work Orders Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Work Order ID</th>
+                        <th>Asset</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Due Date</th>
+                        <th>Assigned To</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for wo in work_orders.items %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('work_orders.view_work_order', work_order_id=wo.id) }}"
+                               class="text-decoration-none">
+                                {{ wo.work_order_id }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('assets.view_asset', asset_id=wo.asset_id) }}"
+                               class="text-decoration-none">
+                                {{ wo.asset.name }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ wo.type }}</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ wo.status.lower().replace(' ', '-') }}">
+                                {{ wo.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ wo.priority.lower() }}">
+                                {{ wo.priority }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if wo.due_date %}
+                                {% if wo.due_date < today %}
+                                    <span class="text-danger">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        {{ wo.due_date.strftime('%Y-%m-%d') }}
+                                    </span>
+                                {% else %}
+                                    {{ wo.due_date.strftime('%Y-%m-%d') }}
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">Not set</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if wo.assigned_technician %}
+                                {{ wo.assigned_technician.username }}
+                            {% else %}
+                                <span class="text-muted">Unassigned</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group">
+                                <a href="{{ url_for('work_orders.view_work_order', work_order_id=wo.id) }}"
+                                   class="btn btn-sm btn-outline-primary" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('work_orders.edit_work_order', work_order_id=wo.id) }}"
+                                   class="btn btn-sm btn-outline-secondary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if current_user.role == 'Planner' %}
+                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                        onclick="confirmDelete({{ wo.id }})" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="fas fa-clipboard-list fa-2x mb-3"></i>
+                                <p class="mb-0">No work orders found</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if work_orders.pages > 1 %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if not work_orders.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('work_orders.index', page=work_orders.prev_num) }}">Previous</a>
+        </li>
+        {% for page_num in work_orders.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+            {% if page_num %}
+                <li class="page-item {% if page_num == work_orders.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('work_orders.index', page=page_num) }}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not work_orders.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('work_orders.index', page=work_orders.next_num) }}">Next</a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete this work order? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+function confirmDelete(workOrderId) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    const deleteForm = document.getElementById('deleteForm');
+    deleteForm.action = `/work_orders/${workOrderId}/delete`;
+    modal.show();
+}
+</script>
+{% endblock %}
+{% endblock %}
