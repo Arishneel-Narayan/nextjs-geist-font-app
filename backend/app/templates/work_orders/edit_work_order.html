@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Work Order - {{ work_order.work_order_id }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-edit me-2"></i>Edit Work Order
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('work_orders.edit_work_order', work_order_id=work_order.id) }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Work Order ID Display -->
+                    <div class="alert alert-info mb-3">
+                        <strong>Work Order ID:</strong> {{ work_order.work_order_id }}
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.asset_id.label(class="form-label") }}
+                            {% if form.asset_id.errors %}
+                                {{ form.asset_id(class="form-select is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.asset_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.asset_id(class="form-select") }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            {{ form.type.label(class="form-label") }}
+                            {% if form.type.errors %}
+                                {{ form.type(class="form-select is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.type.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.type(class="form-select") }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            {{ form.priority.label(class="form-label") }}
+                            {% if form.priority.errors %}
+                                {{ form.priority(class="form-select is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.priority.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.priority(class="form-select") }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4">
+                            {{ form.status.label(class="form-label") }}
+                            {% if form.status.errors %}
+                                {{ form.status(class="form-select is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.status.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.status(class="form-select") }}
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4">
+                            {{ form.due_date.label(class="form-label") }}
+                            {% if form.due_date.errors %}
+                                {{ form.due_date(class="form-control is-invalid", type="date") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.due_date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.due_date(class="form-control", type="date") }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {% if form.description.errors %}
+                            {{ form.description(class="form-control is-invalid", rows=4) }}
+                            <div class="invalid-feedback">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.description(class="form-control", rows=4) }}
+                        {% endif %}
+                    </div>
+
+                    {% if current_user.role == 'Planner' %}
+                    <div class="mb-3">
+                        {{ form.assigned_technician_id.label(class="form-label") }}
+                        {% if form.assigned_technician_id.errors %}
+                            {{ form.assigned_technician_id(class="form-select is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.assigned_technician_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.assigned_technician_id(class="form-select") }}
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-4">
+                        {{ form.completion_notes.label(class="form-label") }}
+                        {% if form.completion_notes.errors %}
+                            {{ form.completion_notes(class="form-control is-invalid", rows=3) }}
+                            <div class="invalid-feedback">
+                                {% for error in form.completion_notes.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.completion_notes(class="form-control", rows=3,
+                                                   placeholder="Enter completion notes or progress updates...") }}
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('work_orders.view_work_order', work_order_id=work_order.id) }}" 
+                           class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Back
+                        </a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusSelect = document.querySelector('select[name="status"]');
+    const completionNotesField = document.querySelector('textarea[name="completion_notes"]');
+    
+    // Make completion notes required when status is "Completed"
+    statusSelect.addEventListener('change', function() {
+        if (this.value === 'Completed') {
+            completionNotesField.setAttribute('required', '');
+            completionNotesField.closest('.mb-4').querySelector('.form-label').innerHTML += ' <span class="text-danger">*</span>';
+        } else {
+            completionNotesField.removeAttribute('required');
+            completionNotesField.closest('.mb-4').querySelector('.form-label').innerHTML = 
+                completionNotesField.closest('.mb-4').querySelector('.form-label').innerHTML.replace(' <span class="text-danger">*</span>', '');
+        }
+    });
+
+    // Trigger change event to set initial state
+    statusSelect.dispatchEvent(new Event('change'));
+});
+</script>
+{% endblock %}
+{% endblock %}
